@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """Algorithms to detect communities in a Graph."""
 import networkx as nx
-from collections import defaultdict
 __author__ = """\n""".join(['Konstantinos Karakatsanis '
                             '<dinoskarakas@gmail.com>',
                             'Panos Louridas <louridas@gmail.com>'])
@@ -20,6 +19,9 @@ def louvain(G, weight='weight'):
     ----------
     G : NetworkX graph
 
+    weight: string, optional (default='weight')
+        Edge data key corresponding to the edge weight.
+
     Returns
     -------
     A dictionary which keys are the nodes of the Graph and its values are the
@@ -30,6 +32,9 @@ def louvain(G, weight='weight'):
     The Louvain Method for community detection is a method to extract
     communities from large networks created by Vincent Blondel. The method is
     a greedy optimization method that appears to run in time O(n log n).
+
+    Implementation follows algorithm described at paper below:
+    https://www-complexnetworks.lip6.fr/~campigotto/documents/publications/louvain-generic.pdf
     """
     H = G.copy()
     tree = []
@@ -44,13 +49,14 @@ def louvain(G, weight='weight'):
 
     improved = True
     while improved:
-        p, c, improvements = _one_pass(H)
-        H = _partition_to_graph(H, p, c)
+        p, c, improvements = _one_pass(H, weight)
+        H = _partition_to_graph(H, p, c, weight)
         improved = improvements > 0 and len(c) > 1
         tree.append(H)
     return tree
 
-def _one_pass(G):
+
+def _one_pass(G, weight):
     """
     A single pass of the Louvain algorithm. Moves nodes from community
     to community as long as this increases the graph's modularity.
@@ -58,6 +64,7 @@ def _one_pass(G):
     Part of the Louvain algorithm.
 
     :param G: NetworkX graph
+    :param weight: Edge data key corresponding to the edge weight.
     :return: a tuple (p, c, improvements); p is a dictionary whose keys
         are the nodes of the graph and the values are the communities
         they belong; c is a dictionary whose keys are the communities and
@@ -65,7 +72,6 @@ def _one_pass(G):
         of times the modularity was improved by moving a node to 
         another community
     """
-    i = 0 # community index, starting from zero
     # partition dict: each entry has as key a node index and as value
     # the index of the community in which the node belongs
     p = {}
@@ -80,45 +86,46 @@ def _one_pass(G):
     # The denominator used to calculate the gain in modularity;
     # we precompute it and cache it to avoid re-calculations in loop
     # calls.
-    denom = 2 * G.size(weight='weight')
+    denom = 2 * G.size(weight=weight)
     improvements = 0 # number of improvements
-    for u in G:
-        p[u] = i
+    for i, u in enumerate(G):
+        p[u] = i # community index, starting from zero
         c[i] = { u }
-        inner[i], tot[i] = _init(G, u)
+        inner[i], tot[i] = _init(G, u, weight)
         i += 1
     increase = True        
     while increase:
         increase = False
         for u in G:
             c_old = p[u]
-            _remove(G, u, c_old, c, p, inner, tot)
-            if G.neighbors(u) != 0:
-                max_gain = 0
-                c_new = None
-                for v in nx.neighbors(G, u):
-                    if u != v:
-                        c_v = p[v]
-                        gain = _gain(G, u, c_v, p, tot, denom)
-                        if gain > max_gain:
-                            max_gain = gain
-                            c_new = c_v
+            _remove(G, u, c_old, c, p, inner, tot, weight)
+            max_gain = 0
+            c_new = None
+            for v in nx.neighbors(G, u):
+                if u != v:
+                    c_v = p[v]
+                    gain = _gain(G, u, c_v, p, tot, denom, weight)
+                    if gain > max_gain:
+                        max_gain = gain
+                        c_new = c_v
             if c_new is None:
                 c_new = c_old
-            _insert(G, u, c_new, c, p, inner, tot)
+            _insert(G, u, c_new, c, p, inner, tot, weight)
             if c_new != c_old:
                 increase = True
                 improvements += 1
     c = { key:value for (key, value) in c.iteritems() if len(value) > 0 }
     return p, c, improvements
 
-def _partition_to_graph(G, p, c):
+
+def _partition_to_graph(G, p, c, weight):
     """Creates a graph whose nodes represent communities and its edges
     represent the connections between these communities.
 
     Part of the Louvain algorithm.
 
     :param G: NetworkX graph
+    :param weight: Edge data key corresponding to the edge weight.
     :param p: Partinion dictionary; each entry has as key a node index
         and as value the index of the community in which the node belongs    
     :param c: Community dictionary; each entry has as key a community index
@@ -133,16 +140,17 @@ def _partition_to_graph(G, p, c):
         G2.add_node(k, members=c[k])
     
     for u, v, data in G.edges(data=True):
-        u_v_weight = data.get('weight', 1)
+        u_v_weight = data.get(weight, 1)
         if p[u] == p[v] and u != v:
             u_v_weight *= 2
         if G2.has_edge(p[u], p[v]):
-            G2.edge[p[u]][p[v]]['weight'] += u_v_weight
+            G2.edge[p[u]][p[v]][weight] += u_v_weight
         else:
             G2.add_edge(p[u], p[v], weight=u_v_weight)
     return G2
 
-def _init(G, u):
+
+def _init(G, u, weight):
     """
     Returns a tuple (inner, tot) where inner is the sum of weights of
     links from u to u, i.e., loops, and tot is the sum of weights of all
@@ -152,14 +160,15 @@ def _init(G, u):
 
     :param G: NetworkX graph
     :param u: A node of the Graph
+    :param weight: Edge data key corresponding to the edge weight.
     :return: Updated inner and tot parameters
     """
-    inner = G.get_edge_data(u, u, {'weight': 0}).get('weight', 1)
+    inner = G.get_edge_data(u, u, {weight: 0}).get(weight, 1)
     tot = G.degree(u)
     return inner, tot
 
 
-def _remove(G, u, c_old, c, p, inner, tot):
+def _remove(G, u, c_old, c, p, inner, tot, weight):
     """
     Adjusts the p, inner, and tot parameters after extracting the node u from
     the community c.
@@ -178,14 +187,16 @@ def _remove(G, u, c_old, c, p, inner, tot):
     :param tot: Sum of all the weights of the links to nodes in each community;
         when the function returns all the weights of edges adjacent to u
         have been removed
+    :param weight: Edge data key corresponding to the edge weight.
     """
-    inner[c_old] -= _k_in(G, u, c, p) + \
-                    G.get_edge_data(u, u, {'weight': 0}).get('weight', 1)
+    inner[c_old] -= _k_in(G, u, c, p, weight) + \
+                    G.get_edge_data(u, u, {weight: 0}).get(weight, 1)
     tot[c_old] -= G.degree(u)
     p[u] = None
     c[c_old].remove(u)
 
-def _insert(G, u, c_new, c, p, inner, tot):
+
+def _insert(G, u, c_new, c, p, inner, tot, weight):
     """
     Calculates the inner and tot parameters after inserting the node u into
     the community c.
@@ -203,16 +214,18 @@ def _insert(G, u, c_new, c, p, inner, tot):
         adjacent to u have been removed
     :param tot: Sum of all the weights of the links to nodes in the community;
         when the function returns all the weights of edges adjacent to u
-        have been removed       
+        have been removed
+    :param weight: Edge data key corresponding to the edge weight.
     :return: Updated p, inner and tot parameters
     """
-    inner[c_new] += _k_in(G, u, c, p) + \
-                    G.get_edge_data(u, u, {'weight': 0}).get('weight', 1)
+    inner[c_new] += _k_in(G, u, c, p, weight) + \
+                    G.get_edge_data(u, u, {weight: 0}).get(weight, 1)
     tot[c_new] += G.degree(u)
     c[c_new].add(u)
     p[u] = c_new
 
-def _gain(G, u, c_target, p, tot, denom):
+
+def _gain(G, u, c_target, p, tot, denom, weight):
     """
     Calculates the gain in modularity.
 
@@ -224,13 +237,14 @@ def _gain(G, u, c_target, p, tot, denom):
     :param tot: Sum of all the weights of the links to nodes in each community
     :param tot: Sum of all the weights of the links to nodes in the communit    
     :param denom: Twice the sum of all the weights of all links.
+    :param weight: Edge data key corresponding to the edge weight.
     :return: The change in modularity
     """
-    return float(_k_in(G, u, c_target, p)) - \
+    return float(_k_in(G, u, c_target, p, weight)) - \
            float(tot[c_target] * G.degree(u)) / (denom)
 
 
-def _k_in(G, u, c_target, p):
+def _k_in(G, u, c_target, p, weight):
     """
     Calculates the sum of the weights of the links between node u and other
     nodes in the community.
@@ -239,9 +253,10 @@ def _k_in(G, u, c_target, p):
 
     :param u: A node of the graph
     :param c_target: The community the node u is moving into
+    :param weight: Edge data key corresponding to the edge weight.
     :return: Sum of the weights of the links between node u and other nodes
         in the community
     """
-    return sum(G.get_edge_data(u, v, {'weight': 0}).get('weight', 1)
-               for v in G if v != u and p[v] == c_target)
+    return sum(G.get_edge_data(u, v).get(weight, 1)
+               for v in G.neighbors(u) if p[v] == c_target)
 
