@@ -3,10 +3,12 @@
 import networkx as nx
 __author__ = """\n""".join(['Konstantinos Karakatsanis '
                             '<dinoskarakas@gmail.com>',
-                            'Panos Louridas <louridas@gmail.com>'])
+                            'Panos Louridas <louridas@gmail.com>',
+                            'Thodoris Sotiropoulos <theosotr@windowslive.com>'])
 #    Copyright (C) 2015 by
 #    Konstantinos Karakatsanis <dinoskarakas@gmail.com>
 #    Panos Louridas <louridas@gmail.com>
+#    Thodoris Sotiropoulos <theosotr@windowslive.com>
 #    All rights reserved.
 #    BSD license.
 __all__ = ['louvain']
@@ -24,8 +26,8 @@ def louvain(G, weight='weight'):
 
     Returns
     -------
-    A dictionary which keys are the nodes of the Graph and its values are the
-    communities that they belong
+    tree: A NetworkX graph representing a tree showing the partition of graph
+    into communities for each level.
 
     Notes
     -----
@@ -37,7 +39,9 @@ def louvain(G, weight='weight'):
     https://www-complexnetworks.lip6.fr/~campigotto/documents/publications/louvain-generic.pdf
     """
     H = G.copy()
-    tree = []
+    tree = nx.DiGraph()
+    tree.add_nodes_from(H.nodes())
+    level = 1
 
     if G.number_of_edges() == 0:
         msg = 'The graph has undefined modularity.'
@@ -49,14 +53,16 @@ def louvain(G, weight='weight'):
 
     improved = True
     while improved:
-        p, c, improvements = _one_pass(H, weight)
+        p, c, improvements = _one_pass(H, level, weight)
         H = _partition_to_graph(H, p, c, weight)
         improved = improvements > 0 and len(c) > 1
-        tree.append(H)
+        tree.add_edges_from({(u, v) for u, data in H.nodes(data=True)
+                             for v in data['members']})
+        level += 1
     return tree
 
 
-def _one_pass(G, weight):
+def _one_pass(G, level, weight):
     """
     A single pass of the Louvain algorithm. Moves nodes from community
     to community as long as this increases the graph's modularity.
@@ -64,6 +70,7 @@ def _one_pass(G, weight):
     Part of the Louvain algorithm.
 
     :param G: NetworkX graph
+    :param level: int, level of community partition.
     :param weight: Edge data key corresponding to the edge weight.
     :return: a tuple (p, c, improvements); p is a dictionary whose keys
         are the nodes of the graph and the values are the communities
@@ -89,10 +96,11 @@ def _one_pass(G, weight):
     denom = 2 * G.size(weight=weight)
     improvements = 0 # number of improvements
     for i, u in enumerate(G):
-        p[u] = i # community index, starting from zero
-        c[i] = { u }
-        inner[i], tot[i] = _init(G, u, weight)
-        i += 1
+        comm = 'comm' + str(i) + '-' + str(level) # community index, starting from zero
+        p[u] = comm
+        c[comm] = { u }
+        inner[comm], tot[comm] = _init(G, u, weight)
+
     increase = True        
     while increase:
         increase = False
