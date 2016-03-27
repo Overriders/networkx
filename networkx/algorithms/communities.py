@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Algorithms to detect communities in a Graph."""
 import networkx as nx
+
 __author__ = """\n""".join(['Konstantinos Karakatsanis '
                             '<dinoskarakas@gmail.com>',
                             'Panos Louridas <louridas@gmail.com>',
@@ -15,7 +16,8 @@ __all__ = ['louvain']
 
 
 def louvain(G, weight='weight'):
-    """Find communities in graph using the Louvain method.
+    """
+    Find communities in graph using the Louvain method.
 
     Parameters
     ----------
@@ -87,21 +89,22 @@ def _one_pass(G, level, weight):
     # community
     c = {}
     # Sum of all the weights of the links inside each community
-    inner = {} # the number of internal links of a community
+    inner = {}  # the number of internal links of a community
     # Sum of all the weights of the links to nodes in each community
-    tot = {} 
+    tot = {}
     # The denominator used to calculate the gain in modularity;
     # we precompute it and cache it to avoid re-calculations in loop
     # calls.
     denom = 2 * G.size(weight=weight)
-    improvements = 0 # number of improvements
+    improvements = 0  # number of improvements
     for i, u in enumerate(G):
-        comm = 'comm' + str(i) + '-' + str(level) # community index, starting from zero
+        comm = 'comm' + str(i) + '-' + str(
+            level)  # community index, starting from zero
         p[u] = comm
-        c[comm] = { u }
+        c[comm] = {u}
         inner[comm], tot[comm] = _init(G, u, weight)
 
-    increase = True        
+    increase = True
     while increase:
         increase = False
         for u in G:
@@ -122,12 +125,13 @@ def _one_pass(G, level, weight):
             if c_new != c_old:
                 increase = True
                 improvements += 1
-    c = { key:value for (key, value) in c.iteritems() if len(value) > 0 }
+    c = {key: value for (key, value) in c.iteritems() if len(value) > 0}
     return p, c, improvements
 
 
 def _partition_to_graph(G, p, c, weight):
-    """Creates a graph whose nodes represent communities and its edges
+    """
+    Creates a graph whose nodes represent communities and its edges
     represent the connections between these communities.
 
     Part of the Louvain algorithm.
@@ -146,7 +150,7 @@ def _partition_to_graph(G, p, c, weight):
     G2 = nx.Graph()
     for k in c:
         G2.add_node(k, members=c[k])
-    
+
     for u, v, data in G.edges(data=True):
         u_v_weight = data.get(weight, 1)
         if p[u] == p[v] and u != v:
@@ -267,4 +271,3 @@ def _k_in(G, u, c_target, p, weight):
     """
     return sum(G.get_edge_data(u, v).get(weight, 1)
                for v in G.neighbors(u) if p[v] == c_target)
-
