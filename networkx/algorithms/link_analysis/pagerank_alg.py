@@ -1,5 +1,5 @@
 """PageRank analysis of graph structure. """
-#    Copyright (C) 2004-2015 by
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -25,7 +25,7 @@ def pagerank(G, alpha=0.85, personalization=None,
     an algorithm to rank web pages.
 
     Parameters
-    -----------
+    ----------
     G : graph
       A NetworkX graph.  Undirected graphs will be converted to a directed
       graph with two directed edges for each undirected edge.
@@ -163,7 +163,7 @@ def google_matrix(G, alpha=0.85, personalization=None,
     """Return the Google matrix of the graph.
 
     Parameters
-    -----------
+    ----------
     G : graph
       A NetworkX graph.  Undirected graphs will be converted to a directed
       graph with two directed edges for each undirected edge.
@@ -217,7 +217,7 @@ def google_matrix(G, alpha=0.85, personalization=None,
     import numpy as np
 
     if nodelist is None:
-        nodelist = G.nodes()
+        nodelist = list(G)
 
     M = nx.to_numpy_matrix(G, nodelist=nodelist, weight=weight)
     N = len(G)
@@ -269,7 +269,7 @@ def pagerank_numpy(G, alpha=0.85, personalization=None, weight='weight',
     an algorithm to rank web pages.
 
     Parameters
-    -----------
+    ----------
     G : graph
       A NetworkX graph.  Undirected graphs will be converted to a directed
       graph with two directed edges for each undirected edge.
@@ -334,9 +334,9 @@ def pagerank_numpy(G, alpha=0.85, personalization=None, weight='weight',
                       weight=weight, dangling=dangling)
     # use numpy LAPACK solver
     eigenvalues, eigenvectors = np.linalg.eig(M.T)
-    ind = eigenvalues.argsort()
-    # eigenvector of largest eigenvalue at ind[-1], normalized
-    largest = np.array(eigenvectors[:, ind[-1]]).flatten().real
+    ind = np.argmax(eigenvalues)
+    # eigenvector of largest eigenvalue is at ind, normalized
+    largest = np.array(eigenvectors[:, ind]).flatten().real
     norm = float(largest.sum())
     return dict(zip(G, map(float, largest / norm)))
 
@@ -351,7 +351,7 @@ def pagerank_scipy(G, alpha=0.85, personalization=None,
     an algorithm to rank web pages.
 
     Parameters
-    -----------
+    ----------
     G : graph
       A NetworkX graph.  Undirected graphs will be converted to a directed
       graph with two directed edges for each undirected edge.
@@ -420,7 +420,7 @@ def pagerank_scipy(G, alpha=0.85, personalization=None,
     if N == 0:
         return {}
 
-    nodelist = G.nodes()
+    nodelist = list(G)
     M = nx.to_scipy_sparse_matrix(G, nodelist=nodelist, weight=weight,
                                   dtype=float)
     S = scipy.array(M.sum(axis=1)).flatten()

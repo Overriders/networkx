@@ -10,6 +10,7 @@ Connected components.
 #    BSD license.
 import networkx as nx
 from networkx.utils.decorators import not_implemented_for
+from ...utils import arbitrary_element
 
 __authors__ = "\n".join(['Eben Kenah',
                          'Aric Hagberg <aric.hagberg@gmail.com>'
@@ -42,7 +43,7 @@ def connected_components(G):
     Generate a sorted list of connected components, largest first.
 
     >>> G = nx.path_graph(4)
-    >>> G.add_path([10, 11, 12])
+    >>> nx.add_path(G, [10, 11, 12])
     >>> [len(c) for c in sorted(nx.connected_components(G), key=len, reverse=True)]
     [4, 3]
 
@@ -170,7 +171,7 @@ def is_connected(G):
     if len(G) == 0:
         raise nx.NetworkXPointlessConcept('Connectivity is undefined ',
                                           'for the null graph.')
-    return len(set(_plain_bfs(G, next(G.nodes_iter())))) == len(G)
+    return len(set(_plain_bfs(G, arbitrary_element(G)))) == len(G)
 
 
 @not_implemented_for('directed')

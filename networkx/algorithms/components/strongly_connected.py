@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Strongly connected components.
 """
-#    Copyright (C) 2004-2015 by
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -49,7 +49,7 @@ def strongly_connected_components(G):
     Generate a sorted list of strongly connected components, largest first.
 
     >>> G = nx.cycle_graph(4, create_using=nx.DiGraph())
-    >>> G.add_cycle([10, 11, 12])
+    >>> nx.add_cycle(G, [10, 11, 12])
     >>> [len(c) for c in sorted(nx.strongly_connected_components(G),
     ...                         key=len, reverse=True)]
     [4, 3]
@@ -145,7 +145,7 @@ def kosaraju_strongly_connected_components(G, source=None):
     Generate a sorted list of strongly connected components, largest first.
 
     >>> G = nx.cycle_graph(4, create_using=nx.DiGraph())
-    >>> G.add_cycle([10, 11, 12])
+    >>> nx.add_cycle(G, [10, 11, 12])
     >>> [len(c) for c in sorted(nx.kosaraju_strongly_connected_components(G),
     ...                         key=len, reverse=True)]
     [4, 3]
@@ -206,7 +206,7 @@ def strongly_connected_components_recursive(G):
     Generate a sorted list of strongly connected components, largest first.
 
     >>> G = nx.cycle_graph(4, create_using=nx.DiGraph())
-    >>> G.add_cycle([10, 11, 12])
+    >>> nx.add_cycle(G, [10, 11, 12])
     >>> [len(c) for c in sorted(nx.strongly_connected_components_recursive(G),
     ...                         key=len, reverse=True)]
     [4, 3]
@@ -289,7 +289,7 @@ def strongly_connected_component_subgraphs(G, copy=True):
     Generate a sorted list of strongly connected components, largest first.
 
     >>> G = nx.cycle_graph(4, create_using=nx.DiGraph())
-    >>> G.add_cycle([10, 11, 12])
+    >>> nx.add_cycle(G, [10, 11, 12])
     >>> [len(Gc) for Gc in sorted(nx.strongly_connected_component_subgraphs(G),
     ...                         key=len, reverse=True)]
     [4, 3]
@@ -415,7 +415,7 @@ def condensation(G, scc=None):
         mapping.update((n, i) for n in component)
     number_of_components = i + 1
     C.add_nodes_from(range(number_of_components))
-    C.add_edges_from((mapping[u], mapping[v]) for u, v in G.edges_iter()
+    C.add_edges_from((mapping[u], mapping[v]) for u, v in G.edges()
                      if mapping[u] != mapping[v])
     # Add a list of members (ie original nodes) to each node (ie scc) in C.
     nx.set_node_attributes(C, 'members', members)

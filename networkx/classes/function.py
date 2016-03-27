@@ -1,41 +1,42 @@
-"""Functional interface to graph methods and assorted utilities.
-"""
-#    Copyright (C) 2004-2015 by
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
 #    All rights reserved.
 #    BSD license.
 #
+# Authors:  Aric Hagberg (hagberg@lanl.gov)
+#           Pieter Swart (swart@lanl.gov)
+#           Dan Schult(dschult@colgate.edu)
+"""Functional interface to graph methods and assorted utilities.
+"""
+from __future__ import division
+
+from collections import Counter
+from itertools import chain
+
 import networkx as nx
 from networkx.utils import not_implemented_for
-import itertools
-__author__ = """\n""".join(['Aric Hagberg (hagberg@lanl.gov)',
-                           'Pieter Swart (swart@lanl.gov)',
-                           'Dan Schult(dschult@colgate.edu)'])
+from networkx.utils import pairwise
+
 __all__ = ['nodes', 'edges', 'degree', 'degree_histogram', 'neighbors',
            'number_of_nodes', 'number_of_edges', 'density',
-           'nodes_iter', 'edges_iter', 'is_directed','info',
-           'freeze','is_frozen','subgraph','create_empty_copy',
-           'set_node_attributes','get_node_attributes',
-           'set_edge_attributes','get_edge_attributes',
-           'all_neighbors','non_neighbors', 'non_edges',
-           'common_neighbors', 'is_weighted','is_negatively_weighted',
-           'is_empty']
+           'is_directed', 'info', 'freeze', 'is_frozen', 'subgraph',
+           'add_star', 'add_path', 'add_cycle',
+           'create_empty_copy', 'set_node_attributes',
+           'get_node_attributes', 'set_edge_attributes',
+           'get_edge_attributes', 'all_neighbors', 'non_neighbors',
+           'non_edges', 'common_neighbors', 'is_weighted',
+           'is_negatively_weighted', 'is_empty']
 
 
 def nodes(G):
-    """Return a copy of the graph nodes in a list."""
+    """Return an iterator over the graph nodes."""
     return G.nodes()
 
 
-def nodes_iter(G):
-    """Return an iterator over the graph nodes."""
-    return G.nodes_iter()
-
-
-def edges(G,nbunch=None):
-    """Return list of edges incident to nodes in nbunch.
+def edges(G, nbunch=None):
+    """Return iterator over edges incident to nodes in nbunch.
 
     Return all edges if nbunch is unspecified or nbunch=None.
 
@@ -44,24 +45,14 @@ def edges(G,nbunch=None):
     return G.edges(nbunch)
 
 
-def edges_iter(G,nbunch=None):
-    """Return iterator over edges incident to nodes in nbunch.
-
-    Return all edges if nbunch is unspecified or nbunch=None.
-
-    For digraphs, edges=out_edges
-    """
-    return G.edges_iter(nbunch)
-
-
-def degree(G,nbunch=None,weight=None):
+def degree(G, nbunch=None, weight=None):
     """Return degree of single node or of nbunch of nodes.
     If nbunch is ommitted, then return degrees of *all* nodes.
     """
-    return G.degree(nbunch,weight)
+    return G.degree(nbunch, weight)
 
 
-def neighbors(G,n):
+def neighbors(G, n):
     """Return a list of nodes connected to node n. """
     return G.neighbors(n)
 
@@ -101,15 +92,13 @@ def density(G):
     Self loops are counted in the total number of edges so graphs with self
     loops can have density higher than 1.
     """
-    n=number_of_nodes(G)
-    m=number_of_edges(G)
-    if m==0 or n <= 1:
-        d=0.0
-    else:
-        if G.is_directed():
-            d=m/float(n*(n-1))
-        else:
-            d= m*2.0/float(n*(n-1))
+    n = number_of_nodes(G)
+    m = number_of_edges(G)
+    if m == 0 or n <= 1:
+        return 0
+    d = m / (n * (n - 1))
+    if not G.is_directed():
+        d *= 2
     return d
 
 
@@ -132,12 +121,8 @@ def degree_histogram(G):
     Note: the bins are width one, hence len(list) can be large
     (Order(number_of_edges))
     """
-    degseq=list(G.degree().values())
-    dmax=max(degseq)+1
-    freq= [ 0 for d in range(dmax) ]
-    for d in degseq:
-        freq[d] += 1
-    return freq
+    counts = Counter(d for n, d in G.degree())
+    return [counts.get(i, 0) for i in range(max(counts) + 1)]
 
 
 def is_directed(G):
@@ -157,14 +142,13 @@ def freeze(G):
     Node and edge data can still be modified.
 
     Parameters
-    -----------
+    ----------
     G : graph
       A NetworkX graph
 
     Examples
     --------
-    >>> G=nx.Graph()
-    >>> G.add_path([0,1,2,3])
+    >>> G=nx.path_graph(4)
     >>> G=nx.freeze(G)
     >>> try:
     ...    G.add_edge(4,5)
@@ -203,7 +187,7 @@ def is_frozen(G):
     """Return True if graph is frozen.
 
     Parameters
-    -----------
+    ----------
     G : graph
       A NetworkX graph
 
@@ -215,6 +199,83 @@ def is_frozen(G):
         return G.frozen
     except AttributeError:
         return False
+
+
+def add_star(G, nodes, **attr):
+    """Add a star to Graph G.
+
+    The first node in nodes is the middle of the star.
+    It is connected to all other nodes.
+
+    Parameters
+    ----------
+    nodes : iterable container
+        A container of nodes.
+    attr : keyword arguments, optional (default= no attributes)
+        Attributes to add to every edge in star.
+
+    See Also
+    --------
+    add_path, add_cycle
+
+    Examples
+    --------
+    >>> G = nx.Graph()
+    >>> nx.add_star(G, [0, 1, 2, 3])
+    >>> nx.add_star(G, [10, 11, 12], weight=2)
+    """
+    nlist = iter(nodes)
+    v = next(nlist)
+    edges = ((v, n) for n in nlist)
+    G.add_edges_from(edges, **attr)
+
+
+def add_path(G, nodes, **attr):
+    """Add a path to the Graph G.
+
+    Parameters
+    ----------
+    nodes : iterable container
+        A container of nodes.  A path will be constructed from
+        the nodes (in order) and added to the graph.
+    attr : keyword arguments, optional (default= no attributes)
+        Attributes to add to every edge in path.
+
+    See Also
+    --------
+    add_star, add_cycle
+
+    Examples
+    --------
+    >>> G = nx.Graph()
+    >>> nx.add_path(G, [0, 1, 2, 3])
+    >>> nx.add_path(G, [10, 11, 12], weight=7)
+    """
+    G.add_edges_from(pairwise(nodes), **attr)
+
+
+def add_cycle(G, nodes, **attr):
+    """Add a cycle to the Graph G.
+
+    Parameters
+    ----------
+    nodes: iterable container
+        A container of nodes.  A cycle will be constructed from
+        the nodes (in order) and added to the graph.
+    attr : keyword arguments, optional (default= no attributes)
+        Attributes to add to every edge in cycle.
+
+    See Also
+    --------
+    add_path, add_star
+
+    Examples
+    --------
+    >>> G = nx.Graph()   # or DiGraph, MultiGraph, MultiDiGraph, etc
+    >>> nx.add_cycle(G, [0, 1, 2, 3])
+    >>> nx.add_cycle(G, [10, 11, 12], weight=7)
+    """
+    G.add_edges_from(pairwise(nodes, cyclic=True), **attr)
 
 
 def subgraph(G, nbunch):
@@ -240,7 +301,7 @@ def subgraph(G, nbunch):
     return G.subgraph(nbunch)
 
 
-def create_empty_copy(G,with_nodes=True):
+def create_empty_copy(G, with_data=True):
     """Return a copy of the graph G with all of the edges removed.
 
     Parameters
@@ -248,16 +309,18 @@ def create_empty_copy(G,with_nodes=True):
     G : graph
        A NetworkX graph
 
-    with_nodes :  bool (default=True)
-       Include nodes.
+    with_data :  bool (default=True)
+       Propagate Graph and Nodes data to the new graph.
 
-    Notes
+    See Also
     -----
-    Graph, node, and edge data is not propagated to the new graph.
+    empty_graph
+
     """
-    H=G.__class__()
-    if with_nodes:
-        H.add_nodes_from(G)
+    H = G.__class__()
+    H.add_nodes_from(G.nodes(data=with_data))
+    if with_data:
+        H.graph.update(G.graph)
     return H
 
 
@@ -282,11 +345,11 @@ def info(G, n=None):
         if len(G) > 0:
             if G.is_directed():
                 info+="Average in degree: %8.4f\n"%\
-                    (sum(G.in_degree().values())/float(nnodes))
+                    (sum(d for n, d in G.in_degree())/float(nnodes))
                 info+="Average out degree: %8.4f"%\
-                    (sum(G.out_degree().values())/float(nnodes))
+                    (sum(d for n, d in G.out_degree())/float(nnodes))
             else:
-                s=sum(G.degree().values())
+                s=sum(dict(G.degree()).values())
                 info+="Average degree: %8.4f"%\
                     (float(s)/float(nnodes))
 
@@ -355,7 +418,7 @@ def get_node_attributes(G, name):
     >>> color[1]
     'red'
     """
-    return dict( (n,d[name]) for n,d in G.node.items() if name in d)
+    return {n: d[name] for n, d in G.node.items() if name in d}
 
 
 def set_edge_attributes(G, name, values):
@@ -389,10 +452,10 @@ def set_edge_attributes(G, name, values):
     except AttributeError:
         # Treat `value` as the attribute value for each edge.
         if G.is_multigraph():
-            edges = G.edges(keys=True)
+            edges = list(G.edges(keys=True))
         else:
-            edges = G.edges()
-        values = dict(zip(edges, [values] * len(edges)))
+            edges = list(G.edges())
+        values = dict(zip(edges, [values] * len(list(edges))))
 
     if G.is_multigraph():
         for (u, v, key), value in values.items():
@@ -421,17 +484,16 @@ def get_edge_attributes(G, name):
     Examples
     --------
     >>> G=nx.Graph()
-    >>> G.add_path([1,2,3],color='red')
-    >>> color=nx.get_edge_attributes(G,'color')
-    >>> color[(1,2)]
+    >>> nx.add_path(G, [1, 2, 3], color='red')
+    >>> color=nx.get_edge_attributes(G, 'color')
+    >>> color[(1, 2)]
     'red'
     """
     if G.is_multigraph():
         edges = G.edges(keys=True, data=True)
     else:
         edges = G.edges(data=True)
-    return dict( (x[:-1], x[-1][name]) for x in edges if name in x[-1] )
-
+    return {x[:-1]: x[-1][name] for x in edges if name in x[-1]}
 
 
 def all_neighbors(graph, node):
@@ -453,11 +515,9 @@ def all_neighbors(graph, node):
         Iterator of neighbors
     """
     if graph.is_directed():
-        values = itertools.chain.from_iterable([graph.predecessors_iter(node),
-                                                graph.successors_iter(node)])
+        values = chain(graph.predecessors(node), graph.successors(node))
     else:
-        values = graph.neighbors_iter(node)
-
+        values = graph.neighbors(node)
     return values
 
 
@@ -477,7 +537,7 @@ def non_neighbors(graph, node):
     non_neighbors : iterator
         Iterator of nodes in the graph that are not neighbors of the node.
     """
-    nbors = set(neighbors(graph, node)) | set([node])
+    nbors = set(neighbors(graph, node)) | {node}
     return (nnode for nnode in graph if nnode not in nbors)
 
 
@@ -495,7 +555,7 @@ def non_edges(graph):
         Iterator of edges that are not in the graph.
     """
     if graph.is_directed():
-        for u in graph.nodes_iter():
+        for u in graph:
             for v in non_neighbors(graph, u):
                 yield (u, v)
     else:
@@ -545,7 +605,7 @@ def common_neighbors(G, u, v):
 
 
 def is_weighted(G, edge=None, weight='weight'):
-    """Returns ``True`` if ``G`` has weighted edges.
+    """Returns True if `G` has weighted edges.
 
     Parameters
     ----------
@@ -553,8 +613,8 @@ def is_weighted(G, edge=None, weight='weight'):
         A NetworkX graph.
 
     edge : tuple, optional
-        A 2-tuple specifying the only edge in ``G`` that will be tested. If
-        ``None``, then every edge in ``G`` is tested.
+        A 2-tuple specifying the only edge in `G` that will be tested. If
+        None, then every edge in `G` is tested.
 
     weight: string, optional
         The attribute name used to query for edge weights.
@@ -562,7 +622,7 @@ def is_weighted(G, edge=None, weight='weight'):
     Returns
     -------
     bool
-        A boolean signifying if ``G``, or the specified edge, is weighted.
+        A boolean signifying if `G`, or the specified edge, is weighted.
 
     Raises
     ------
@@ -598,7 +658,7 @@ def is_weighted(G, edge=None, weight='weight'):
 
 
 def is_negatively_weighted(G, edge=None, weight='weight'):
-    """Returns ``True`` if ``G`` has negatively weighted edges.
+    """Returns True if `G` has negatively weighted edges.
 
     Parameters
     ----------
@@ -606,8 +666,8 @@ def is_negatively_weighted(G, edge=None, weight='weight'):
         A NetworkX graph.
 
     edge : tuple, optional
-        A 2-tuple specifying the only edge in ``G`` that will be tested. If
-        ``None``, then every edge in ``G`` is tested.
+        A 2-tuple specifying the only edge in `G` that will be tested. If
+        None, then every edge in `G` is tested.
 
     weight: string, optional
         The attribute name used to query for edge weights.
@@ -615,7 +675,7 @@ def is_negatively_weighted(G, edge=None, weight='weight'):
     Returns
     -------
     bool
-        A boolean signifying if ``G``, or the specified edge, is negatively
+        A boolean signifying if `G`, or the specified edge, is negatively
         weighted.
 
     Raises
@@ -651,7 +711,7 @@ def is_negatively_weighted(G, edge=None, weight='weight'):
 
 
 def is_empty(G):
-    """Returns ``True`` if ``G`` has no edges.
+    """Returns True if `G` has no edges.
 
     Parameters
     ----------
@@ -661,7 +721,7 @@ def is_empty(G):
     Returns
     -------
     bool
-        ``True`` if ``G`` has no edges, and ``False`` otherwise.
+        True if `G` has no edges, and False otherwise.
 
     Notes
     -----

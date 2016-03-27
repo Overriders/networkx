@@ -46,7 +46,7 @@ Expanders
 ---------
 .. automodule:: networkx.generators.expanders
 .. autosummary::
-   :toctree:generated/
+   :toctree: generated/
 
    margulis_gabber_galil_graph
    chordal_cycle_graph
@@ -101,11 +101,21 @@ Random Graphs
    random_regular_graph
    barabasi_albert_graph
    powerlaw_cluster_graph
-   duplication_divergence_graph
+   random_kernel_graph
    random_lobster
    random_shell_graph
    random_powerlaw_tree
    random_powerlaw_tree_sequence
+
+
+Duplication Divergence
+----------------------
+.. automodule:: networkx.generators.duplication
+.. autosummary::
+   :toctree: generated/
+
+   duplication_divergence_graph
+   partial_duplication_graph
 
 
 Degree Sequence
@@ -143,6 +153,7 @@ Directed
    gn_graph
    gnr_graph
    gnc_graph
+   random_k_out_graph
    scale_free_graph
 
 
@@ -156,17 +167,6 @@ Geometric
    geographical_threshold_graph
    waxman_graph
    navigable_small_world_graph
-
-
-Hybrid
-------
-.. automodule:: networkx.generators.hybrid
-.. autosummary::
-   :toctree: generated/
-
-   kl_connected_subgraph
-   is_kl_connected
-
 
 Line Graph
 ----------
@@ -229,6 +229,7 @@ Community
    random_partition_graph
    planted_partition_graph
    gaussian_random_partition_graph
+   ring_of_cliques
 
 
 Non Isomorphic Trees
@@ -239,3 +240,12 @@ Non Isomorphic Trees
 
    nonisomorphic_trees
    number_of_nonisomorphic_trees
+
+
+Triads
+------
+.. automodule:: networkx.generators.triads
+.. autosummary::
+   :toctree: generated/
+
+   triad_graph

@@ -38,7 +38,7 @@ class TestBipartiteBasic:
         assert_true(bipartite.is_bipartite_node_set(G,[0,2]))
         assert_true(bipartite.is_bipartite_node_set(G,[1,3]))
         assert_false(bipartite.is_bipartite_node_set(G,[1,2]))
-        G.add_path([10,20])
+        G.add_edge(10, 20)
         assert_true(bipartite.is_bipartite_node_set(G,[0,2,10]))
         assert_true(bipartite.is_bipartite_node_set(G,[0,2,20]))
         assert_true(bipartite.is_bipartite_node_set(G,[1,3,10]))
@@ -47,7 +47,7 @@ class TestBipartiteBasic:
     def test_bipartite_density(self):
         G=nx.path_graph(5)
         X,Y=bipartite.sets(G)
-        density=float(len(G.edges()))/(len(X)*len(Y))
+        density=float(len(list(G.edges())))/(len(X)*len(Y))
         assert_equal(bipartite.density(G,X),density)
         D = nx.DiGraph(G.edges())
         assert_equal(bipartite.density(D,X),density/2.0)
@@ -58,8 +58,8 @@ class TestBipartiteBasic:
         X=set([1,3])
         Y=set([0,2,4])
         u,d=bipartite.degrees(G,Y)
-        assert_equal(u,{1:2,3:2})
-        assert_equal(d,{0:1,2:2,4:1})
+        assert_equal(dict(u), {1:2,3:2})
+        assert_equal(dict(d), {0:1,2:2,4:1})
 
     def test_bipartite_weighted_degrees(self):
         G=nx.path_graph(5)
@@ -67,11 +67,11 @@ class TestBipartiteBasic:
         X=set([1,3])
         Y=set([0,2,4])
         u,d=bipartite.degrees(G,Y,weight='weight')
-        assert_equal(u,{1:1.1,3:2})
-        assert_equal(d,{0:0.1,2:2,4:1})
+        assert_equal(dict(u), {1:1.1,3:2})
+        assert_equal(dict(d), {0:0.1,2:2,4:1})
         u,d=bipartite.degrees(G,Y,weight='other')
-        assert_equal(u,{1:1.2,3:2})
-        assert_equal(d,{0:0.2,2:2,4:1})
+        assert_equal(dict(u), {1:1.2,3:2})
+        assert_equal(dict(d), {0:0.2,2:2,4:1})
 
 
     @attr('numpy')

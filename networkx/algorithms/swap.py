@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Swap edges in a graph.
 """
-#    Copyright (C) 2004-2015 by
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -71,7 +71,7 @@ def double_edge_swap(G, nswap=1, max_tries=100):
     # probability weighted by degree.
     n=0
     swapcount=0
-    keys,degrees=zip(*G.degree().items()) # keys, degree
+    keys,degrees = zip(*G.degree()) # keys, degree
     cdf=nx.utils.cumulative_distribution(degrees)  # cdf of degree
     while swapcount < nswap:
 #        if random.random() < 0.5: continue # trick to avoid periodicities?
@@ -102,17 +102,17 @@ def double_edge_swap(G, nswap=1, max_tries=100):
 
 
 def connected_double_edge_swap(G, nswap=1, _window_threshold=3):
-    """Attempts the specified number of double-edge swaps in the graph ``G``.
+    """Attempts the specified number of double-edge swaps in the graph `G`.
 
-    A double-edge swap removes two randomly chosen edges ``(u, v)`` and ``(x,
-    y)`` and creates the new edges ``(u, x)`` and ``(v, y)``::
+    A double-edge swap removes two randomly chosen edges `(u, v)` and `(x,
+    y)` and creates the new edges `(u, x)` and `(v, y)`::
 
      u--v            u  v
             becomes  |  |
      x--y            x  y
 
-    If either ``(u, x)`` or ``(v, y)`` already exist, then no swap is performed
-    so the actual number of swapped edges is always *at most* ``nswap``.
+    If either `(u, x)` or `(v, y)` already exist, then no swap is performed
+    so the actual number of swapped edges is always *at most* `nswap`.
 
     Parameters
     ----------
@@ -155,8 +155,8 @@ def connected_double_edge_swap(G, nswap=1, _window_threshold=3):
     Notes
     -----
 
-    The initial graph ``G`` must be connected, and the resulting graph is
-    connected. The graph ``G`` is modified in place.
+    The initial graph `G` must be connected, and the resulting graph is
+    connected. The graph `G` is modified in place.
 
     References
     ----------
@@ -173,8 +173,8 @@ def connected_double_edge_swap(G, nswap=1, _window_threshold=3):
     swapcount = 0
     deg = G.degree()
     # Label key for nodes
-    dk = list(deg.keys())
-    cdf = nx.utils.cumulative_distribution(list(G.degree().values()))
+    dk = list(n for n, d in G.degree())
+    cdf = nx.utils.cumulative_distribution(list(d for n, d in G.degree()))
     window = 1
     while n < nswap:
         wcount = 0
@@ -196,8 +196,8 @@ def connected_double_edge_swap(G, nswap=1, _window_threshold=3):
                 u = dk[ui]
                 x = dk[xi]
                 # Choose targets uniformly from neighbors.
-                v = random.choice(G.neighbors(u))
-                y = random.choice(G.neighbors(x))
+                v = random.choice(list(G.neighbors(u)))
+                y = random.choice(list(G.neighbors(x)))
                 # If the target nodes are the same, skip this pair.
                 if v == y:
                     continue
@@ -240,8 +240,8 @@ def connected_double_edge_swap(G, nswap=1, _window_threshold=3):
                 u = dk[ui]
                 x = dk[xi]
                 # Choose targets uniformly from neighbors.
-                v = random.choice(G.neighbors(u))
-                y = random.choice(G.neighbors(x))
+                v = random.choice(list(G.neighbors(u)))
+                y = random.choice(list(G.neighbors(x)))
                 # If the target nodes are the same, skip this pair.
                 if v == y:
                     continue

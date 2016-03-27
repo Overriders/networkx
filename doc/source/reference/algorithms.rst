@@ -12,18 +12,19 @@ Algorithms
    algorithms.approximation
    algorithms.assortativity
    algorithms.bipartite
-   algorithms.block
    algorithms.boundary
    algorithms.centrality
    algorithms.chordal
    algorithms.clique
    algorithms.clustering
    algorithms.coloring
+   algorithms.communicability_alg
    algorithms.community
    algorithms.component
    algorithms.connectivity
    algorithms.core
    algorithms.cycles
+   algorithms.cuts
    algorithms.dag
    algorithms.distance_measures
    algorithms.distance_regular
@@ -41,12 +42,15 @@ Algorithms
    algorithms.matching
    algorithms.minors
    algorithms.mis
-   algorithms.mst
    algorithms.operators
+   algorithms.reciprocity
    algorithms.rich_club
    algorithms.shortest_paths
    algorithms.simple_paths
    algorithms.swap
+   algorithms.tournament
    algorithms.traversal
    algorithms.tree
+   algorithms.triads
    algorithms.vitality
+   algorithms.wiener

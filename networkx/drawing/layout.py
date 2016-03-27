@@ -4,8 +4,16 @@ Layout
 ******
 
 Node positioning algorithms for graph drawing.
+
+The default scales and centering for these layouts are
+typically squares with side [0, 1] or [0, scale].
+The two circular layout routines (circular_layout and
+shell_layout) have size [-1, 1] or [-scale, scale].
 """
-#    Copyright (C) 2004-2015 by
+# Authors: Aric Hagberg <aric.hagberg@gmail.com>,
+#          Dan Schult <dschult@colgate.edu>
+
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -13,7 +21,7 @@ Node positioning algorithms for graph drawing.
 #    BSD license.
 import collections
 import networkx as nx
-__author__ = """Aric Hagberg (hagberg@lanl.gov)\nDan Schult(dschult@colgate.edu)"""
+
 __all__ = ['circular_layout',
            'random_layout',
            'shell_layout',
@@ -111,7 +119,7 @@ def circular_layout(G, dim=2, scale=1, center=None):
     >>> pos=nx.circular_layout(G)
 
     Notes
-    ------
+    -----
     This algorithm currently only works in two dimensions and does not
     try to minimize edge crossings.
 
@@ -165,7 +173,7 @@ def shell_layout(G, nlist=None, dim=2, scale=1, center=None):
     >>> pos = nx.shell_layout(G, shells)
 
     Notes
-    ------
+    -----
     This algorithm currently only works in two dimensions and does not
     try to minimize edge crossings.
 
@@ -176,13 +184,13 @@ def shell_layout(G, nlist=None, dim=2, scale=1, center=None):
 
     if len(G) == 0:
         return {}
-    elif len(G) == 1:
-        return {G.nodes()[0]: center}
+    if len(G) == 1:
+        return {nx.utils.arbitrary_element(G): center}
 
 
     if nlist is None:
         # draw the whole graph in one shell
-        nlist = [list(G.nodes())]
+        nlist = [list(G)]
 
     if len(nlist[0]) == 1:
         # single node at center
@@ -225,7 +233,6 @@ def fruchterman_reingold_layout(G,dim=2,k=None,
        1/sqrt(n) where n is the number of nodes.  Increase this value
        to move nodes farther apart.
 
-
     pos : dict or None  optional (default=None)
        Initial positions for nodes as a dictionary with node as keys
        and values as a list or tuple.  If None, then use random initial
@@ -247,7 +254,6 @@ def fruchterman_reingold_layout(G,dim=2,k=None,
 
     center : array-like or None
        Coordinate pair around which to center the layout.
-
 
     Returns
     -------
@@ -327,7 +333,7 @@ def _fruchterman_reingold(A, dim=2, k=None, pos=None, fixed=None,
 
     A=np.asarray(A) # make sure we have an array instead of a matrix
 
-    if pos==None:
+    if pos is None:
         # random initial positions
         pos=np.asarray(np.random.random((nnodes,dim)),dtype=A.dtype)
     else:
@@ -398,7 +404,7 @@ def _sparse_fruchterman_reingold(A, dim=2, k=None, pos=None, fixed=None,
     except:
         A=(coo_matrix(A)).tolil()
 
-    if pos==None:
+    if pos is None:
         # random initial positions
         pos=np.asarray(np.random.random((nnodes,dim)),dtype=A.dtype)
     else:
@@ -406,7 +412,7 @@ def _sparse_fruchterman_reingold(A, dim=2, k=None, pos=None, fixed=None,
         pos=pos.astype(A.dtype)
 
     # no fixed nodes
-    if fixed==None:
+    if fixed is None:
         fixed=[]
 
     # optimal distance between nodes
@@ -581,14 +587,15 @@ def _sparse_spectral(A,dim=2):
 def _rescale_layout(pos,scale=1):
     # rescale to (-scale,scale) in all axes
 
-    # shift origin to (0,0)
+    # Find max length over all dimensions
     lim=0 # max coordinate for all axes
     for i in range(pos.shape[1]):
         pos[:,i]-=pos[:,i].mean()
         lim=max(pos[:,i].max(),lim)
     # rescale to (-scale,scale) in all directions, preserves aspect
-    for i in range(pos.shape[1]):
-        pos[:,i]*=scale/lim
+    if lim > 0:
+        for i in range(pos.shape[1]):
+            pos[:,i]*=scale/lim
     return pos
 
 

@@ -42,19 +42,15 @@ def strategy_largest_first(G, colors):
     Largest first (lf) ordering. Ordering the nodes by largest degree
     first.
     """
-    nodes = G.nodes()
-    nodes.sort(key=lambda node: -G.degree(node))
-
-    return nodes
+    return sorted(G, key=G.degree, reverse=True)
 
 
 def strategy_random_sequential(G, colors):
     """
     Random sequential (RS) ordering. Scrambles nodes into random ordering.
     """
-    nodes = G.nodes()
+    nodes = list(G)
     random.shuffle(nodes)
-
     return nodes
 
 
@@ -66,7 +62,7 @@ def strategy_smallest_last(G, colors):
     built is returned.
     """
     len_g = len(G)
-    available_g = G.copy()
+    available_g = G.copy(with_data=False)
     nodes = [None] * len_g
 
     for i in range(len_g):
@@ -88,7 +84,7 @@ def strategy_independent_set(G, colors):
     no_colored = 0
     k = 0
 
-    uncolored_g = G.copy()
+    uncolored_g = G.copy(with_data=False)
     while no_colored < len_g:  # While there are uncolored nodes
         available_g = uncolored_g.copy()
 
@@ -99,7 +95,7 @@ def strategy_independent_set(G, colors):
             no_colored += 1
             uncolored_g.remove_node(node)
             # Remove node and its neighbors from available
-            available_g.remove_nodes_from(available_g.neighbors(node) + [node])
+            available_g.remove_nodes_from(list(available_g.neighbors(node)) + [node])
         k += 1
     return None
 
@@ -131,7 +127,7 @@ def strategy_connected_sequential(G, colors, traversal='bfs'):
     strategy_connected_sequential_dfs method). The default is bfs.
     """
     for component_graph in nx.connected_component_subgraphs(G):
-        source = component_graph.nodes()[0]
+        source = next(iter(component_graph))
 
         yield source  # Pick the first node as source
 
@@ -156,7 +152,7 @@ def strategy_saturation_largest_first(G, colors):
     no_colored = 0
     distinct_colors = {}
 
-    for node in G.nodes_iter():
+    for node in G:
         distinct_colors[node] = set()
 
     while no_colored != len_g:
@@ -165,7 +161,7 @@ def strategy_saturation_largest_first(G, colors):
             no_colored += 1
             node = max_degree_node(G)
             yield node
-            for neighbour in G.neighbors_iter(node):
+            for neighbour in G.neighbors(node):
                 distinct_colors[neighbour].add(0)
         else:
             highest_saturation = -1
@@ -198,11 +194,24 @@ def strategy_saturation_largest_first(G, colors):
             no_colored += 1
             yield node
             color = colors[node]
-            for neighbour in G.neighbors_iter(node):
+            for neighbour in G.neighbors(node):
                 distinct_colors[neighbour].add(color)
 
 
-def greedy_color(G, strategy=strategy_largest_first, interchange=False):
+STRATEGIES = {
+    'largest_first': strategy_largest_first,
+    'random_sequential': strategy_random_sequential,
+    'smallest_last': strategy_smallest_last,
+    'independent_set': strategy_independent_set,
+    'connected_sequential_bfs': strategy_connected_sequential_bfs,
+    'connected_sequential_dfs': strategy_connected_sequential_dfs,
+    'connected_sequential': strategy_connected_sequential,
+    'saturation_largest_first': strategy_saturation_largest_first,
+    'DSATUR': strategy_saturation_largest_first,
+}
+
+
+def greedy_color(G, strategy='largest_first', interchange=False):
     """Color a graph using various strategies of greedy graph coloring.
     The strategies are described in [1]_.
 
@@ -213,22 +222,23 @@ def greedy_color(G, strategy=strategy_largest_first, interchange=False):
     ----------
     G : NetworkX graph
 
-    strategy : function(G, colors)
-       A function that provides the coloring strategy, by returning nodes
-       in the ordering they should be colored. G is the graph, and colors
-       is a dict of the currently assigned colors, keyed by nodes.
+    strategy : string or function(G, colors)
+       A string or function providing the color strategy. Built-in options are:
 
-       You can pass your own ordering function, or use one of the built in:
+       * 'largest_first'
+       * 'random_sequential'
+       * 'smallest_last'
+       * 'independent_set'
+       * 'connected_sequential_bfs'
+       * 'connected_sequential_dfs'
+       * 'connected_sequential' (alias of 'connected_sequential_bfs')
+       * 'saturation_largest_first'
+       * 'DSATUR' (alias of 'saturation_largest_first')
 
-       * strategy_largest_first
-       * strategy_random_sequential
-       * strategy_smallest_last
-       * strategy_independent_set
-       * strategy_connected_sequential_bfs
-       * strategy_connected_sequential_dfs
-       * strategy_connected_sequential
-         (alias of strategy_connected_sequential_bfs)
-       * strategy_saturation_largest_first (also known as DSATUR)
+       Optionally, you may instead pass a function which implements the coloring
+       strategy, by returning nodes in the ordering they should be colored.
+       G is the graph, and colors is a dict of the currently assigned colors,
+       keyed by nodes.
 
     interchange: bool
        Will use the color interchange algorithm described by [2]_ if set
@@ -247,7 +257,7 @@ def greedy_color(G, strategy=strategy_largest_first, interchange=False):
     Examples
     --------
     >>> G = nx.cycle_graph(4)
-    >>> d = nx.coloring.greedy_color(G, strategy=nx.coloring.strategy_largest_first)
+    >>> d = nx.coloring.greedy_color(G, strategy='largest_first')
     >>> d in [{0: 0, 1: 1, 2: 0, 3: 1}, {0: 1, 1: 0, 2: 1, 3: 0}]
     True
 
@@ -261,6 +271,11 @@ def greedy_color(G, strategy=strategy_largest_first, interchange=False):
        ISBN 0-486-45353-7.
     """
     colors = {}  # dictionary to keep track of the colors of the nodes
+
+    strategy = STRATEGIES.get(strategy, strategy)
+    if not callable(strategy):
+        raise nx.NetworkXError('strategy must be callable or a valid string. '
+                               '{0} not valid.'.format(strategy))
 
     if len(G):
         if interchange and (
@@ -280,7 +295,7 @@ def greedy_color(G, strategy=strategy_largest_first, interchange=False):
                      # set to keep track of colors of neighbours
                     neighbour_colors = set()
 
-                    for neighbour in G.neighbors_iter(node):
+                    for neighbour in G.neighbors(node):
                         if neighbour in colors:
                             neighbour_colors.add(colors[neighbour])
 

@@ -20,8 +20,8 @@ def test_iterable():
 def test_graph_iterable():
     K=nx.complete_graph(10)
     assert_true(iterable(K))
-    assert_true(iterable(K.nodes_iter()))
-    assert_true(iterable(K.edges_iter()))
+    assert_true(iterable(K.nodes()))
+    assert_true(iterable(K.edges()))
 
 def test_is_list_of_ints():
     assert_true(is_list_of_ints([1,2,3,42]))
@@ -119,3 +119,14 @@ class TestNumpyArray(object):
         a = dict_to_numpy_array1(d)
         assert_allclose(a.sum(), 3)
 
+def test_pairwise():
+    nodes = range(4)
+    node_pairs = [(0, 1), (1, 2), (2, 3)]
+    node_pairs_cycle = node_pairs + [(3, 0)]
+    assert_equal(list(pairwise(nodes)), node_pairs)
+    assert_equal(list(pairwise(iter(nodes))), node_pairs)
+    assert_equal(list(pairwise(nodes, cyclic=True)), node_pairs_cycle)
+    empty_iter = iter(())
+    assert_equal(list(pairwise(empty_iter)), [])
+    empty_iter = iter(())
+    assert_equal(list(pairwise(empty_iter, cyclic=True)), [])

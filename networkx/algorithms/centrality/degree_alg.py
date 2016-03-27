@@ -2,7 +2,7 @@
 Degree centrality measures.
 
 """
-#    Copyright (C) 2004-2015 by 
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -49,7 +49,7 @@ def degree_centrality(G):
     """
     centrality={}
     s=1.0/(len(G)-1.0)
-    centrality=dict((n,d*s) for n,d in G.degree_iter())
+    centrality=dict((n,d*s) for n,d in G.degree())
     return centrality
 
 def in_degree_centrality(G):
@@ -91,7 +91,7 @@ def in_degree_centrality(G):
             "in_degree_centrality() not defined for undirected graphs.")
     centrality={}
     s=1.0/(len(G)-1.0)
-    centrality=dict((n,d*s) for n,d in G.in_degree_iter())
+    centrality=dict((n,d*s) for n,d in G.in_degree())
     return centrality
 
 
@@ -134,7 +134,7 @@ def out_degree_centrality(G):
             "out_degree_centrality() not defined for undirected graphs.")
     centrality={}
     s=1.0/(len(G)-1.0)
-    centrality=dict((n,d*s) for n,d in G.out_degree_iter())
+    centrality=dict((n,d*s) for n,d in G.out_degree())
     return centrality
 
 

@@ -1,7 +1,7 @@
 """
 Adjacency matrix and incidence matrix of graphs.
 """
-#    Copyright (C) 2004-2015 by
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -70,12 +70,12 @@ def incidence_matrix(G, nodelist=None, edgelist=None,
     """
     import scipy.sparse
     if nodelist is None:
-        nodelist = G.nodes()
+        nodelist = list(G)
     if edgelist is None:
         if G.is_multigraph():
-            edgelist = G.edges(keys=True)
+            edgelist = list(G.edges(keys=True))
         else:
-            edgelist = G.edges()
+            edgelist = list(G.edges())
     A = scipy.sparse.lil_matrix((len(nodelist),len(edgelist)))
     node_index = dict( (node,i) for i,node in enumerate(nodelist) )
     for ei,e in enumerate(edgelist):

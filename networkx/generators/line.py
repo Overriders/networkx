@@ -16,10 +16,10 @@ __all__ = ['line_graph']
 
 
 def line_graph(G, create_using=None):
-    """Returns the line graph of the graph or digraph ``G``.
+    """Returns the line graph of the graph or digraph `G`.
 
-    The line graph of a graph ``G`` has a node for each edge in ``G`` and an
-    edge joining those nodes if the two edges in ``G`` share a common node. For
+    The line graph of a graph `G` has a node for each edge in `G` and an
+    edge joining those nodes if the two edges in `G` share a common node. For
     directed graphs, nodes are adjacent exactly when the edges they represent
     form a directed path of length two.
 
@@ -130,10 +130,10 @@ def _edge_func(G):
     """
     if G.is_multigraph():
         def get_edges(nbunch=None):
-            return G.edges_iter(nbunch, keys=True)
+            return G.edges(nbunch, keys=True)
     else:
         def get_edges(nbunch=None):
-            return G.edges_iter(nbunch)
+            return G.edges(nbunch)
     return get_edges
 
 def _sorted_edge(u, v):

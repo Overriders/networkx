@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 """Generate graphs with a given degree sequence or expected degree sequence.
 """
-#    Copyright (C) 2004-2015 by 
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
 #    All rights reserved.
 #    BSD license.
 import heapq
-from itertools import combinations, permutations
+from itertools import combinations
 import math
 from operator import itemgetter
 import random
+
 import networkx as nx
 from networkx.utils import random_weighted_sample
 
@@ -106,8 +107,9 @@ def configuration_model(deg_sequence,create_using=None,seed=None):
 
     >>> G.remove_edges_from(G.selfloop_edges())
     """
-    if not sum(deg_sequence)%2 ==0:
-        raise nx.NetworkXError('Invalid degree sequence')
+    if sum(deg_sequence) % 2 != 0:
+        msg = 'Invalid degree sequence: sum of degrees must be even, not odd'
+        raise nx.NetworkXError(msg)
 
     if create_using is None:
         create_using = nx.MultiGraph()
@@ -206,8 +208,8 @@ def directed_configuration_model(in_degree_sequence,
     Examples
     --------
     >>> D=nx.DiGraph([(0,1),(1,2),(2,3)]) # directed path graph
-    >>> din=list(D.in_degree().values())
-    >>> dout=list(D.out_degree().values())
+    >>> din=list(d for n, d in D.in_degree())
+    >>> dout=list(d for n, d in D.out_degree())
     >>> din.append(1)
     >>> dout[0]=2
     >>> D=nx.directed_configuration_model(din,dout)
@@ -447,7 +449,7 @@ def havel_hakimi_graph(deg_sequence,create_using=None):
     while n > 0:
         # Retrieve the maximum degree in the sequence
         while len(num_degs[dmax]) == 0:
-            dmax -= 1;
+            dmax -= 1
         # If there are not enough stubs to connect to, then the sequence is
         # not graphical
         if dmax > n-1:
@@ -625,7 +627,7 @@ def degree_sequence_tree(deg_sequence,create_using=None):
         last+=nedges
 
     # in case we added one too many
-    if len(G.degree())>len(deg_sequence):
+    if len(G) > len(deg_sequence):
         G.remove_node(0)
     return G
 
@@ -678,7 +680,7 @@ def random_degree_sequence_graph(sequence, seed=None, tries=10):
     --------
     >>> sequence = [1, 2, 2, 3]
     >>> G = nx.random_degree_sequence_graph(sequence)
-    >>> sorted(G.degree().values())
+    >>> sorted(d for n, d in G.degree())
     [1, 2, 2, 3]
     """
     DSRG = DegreeSequenceRandomGraph(sequence, seed=seed)
@@ -750,15 +752,13 @@ class DegreeSequenceRandomGraph(object):
         return self.remaining_degree[u]*self.remaining_degree[v]/norm
 
     def suitable_edge(self):
-        # Check if there is a suitable edge that is not in the graph
-        # True if an (arbitrary) remaining node has at least one possible 
-        # connection to another remaining node
+        """Returns True if and only if an arbitrary remaining node can
+        potentially be joined with some other remaining node.
+
+        """
         nodes = iter(self.remaining_degree)
-        u = next(nodes) # one arbitrary node
-        for v in nodes: # loop over all other remaining nodes
-            if not self.graph.has_edge(u, v):
-                return True
-        return False
+        u = next(nodes)
+        return any(v not in self.graph[u] for v in nodes)
 
     def phase1(self):
         # choose node pairs from (degree) weighted distribution
@@ -794,7 +794,7 @@ class DegreeSequenceRandomGraph(object):
             if not self.suitable_edge():
                 raise nx.NetworkXUnfeasible('no suitable edges left')
             while True:
-                u,v = sorted(random.choice(H.edges()))
+                u,v = sorted(random.choice(list(H.edges())))
                 if random.random() < self.q(u,v):
                     break
             if random.random() < self.p(u,v): # accept edge

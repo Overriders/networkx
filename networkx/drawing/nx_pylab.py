@@ -13,7 +13,9 @@ matplotlib:     http://matplotlib.org/
 pygraphviz:     http://pygraphviz.github.io/
 
 """
-#    Copyright (C) 2004-2015 by
+# Author: Aric Hagberg (hagberg@lanl.gov)
+
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -22,7 +24,7 @@ pygraphviz:     http://pygraphviz.github.io/
 import networkx as nx
 from networkx.drawing.layout import shell_layout,\
     circular_layout,spectral_layout,spring_layout,random_layout
-__author__ = """Aric Hagberg (hagberg@lanl.gov)"""
+
 __all__ = ['draw',
            'draw_networkx',
            'draw_networkx_nodes',
@@ -62,9 +64,8 @@ def draw(G, pos=None, ax=None, hold=None, **kwds):
        Set the Matplotlib hold state.  If True subsequent draw
        commands will be added to the current axes.
 
-    **kwds : optional keywords
+    kwds : optional keywords
        See networkx.draw_networkx() for a description of optional keywords.
-
 
     Examples
     --------
@@ -137,7 +138,7 @@ def draw(G, pos=None, ax=None, hold=None, **kwds):
     return
 
 
-def draw_networkx(G, pos=None, with_labels=True, **kwds):
+def draw_networkx(G, pos=None, arrows=True, with_labels=True, **kwds):
     """Draw the graph G using Matplotlib.
 
     Draw the graph with Matplotlib with options for node positions,
@@ -153,6 +154,9 @@ def draw_networkx(G, pos=None, with_labels=True, **kwds):
        A dictionary with nodes as keys and positions as values.
        If not specified a spring layout positioning will be computed.
        See networkx.layout for functions that compute node positions.
+
+    arrows : bool, optional (default=True)
+       For directed graphs, if True draw arrowheads.
 
     with_labels :  bool, optional (default=True)
        Set to True to draw labels on the nodes.
@@ -229,6 +233,13 @@ def draw_networkx(G, pos=None, with_labels=True, **kwds):
     label : string, optional
         Label for graph legend
 
+    Notes
+    -----
+    For directed graphs, "arrows" (actually just thicker stubs) are drawn
+    at the head end.  Arrows can be turned off with keyword arrows=False.
+    Yes, it is ugly but drawing proper arrows with Matplotlib this
+    way is tricky.
+
     Examples
     --------
     >>> G=nx.dodecahedral_graph()
@@ -261,7 +272,7 @@ def draw_networkx(G, pos=None, with_labels=True, **kwds):
         pos = nx.drawing.spring_layout(G)  # default to spring layout
 
     node_collection = draw_networkx_nodes(G, pos, **kwds)
-    edge_collection = draw_networkx_edges(G, pos, **kwds)
+    edge_collection = draw_networkx_edges(G, pos, arrows=arrows, **kwds)
     if with_labels:
         draw_networkx_labels(G, pos, **kwds)
     plt.draw_if_interactive()
@@ -363,7 +374,7 @@ def draw_networkx_nodes(G, pos,
         ax = plt.gca()
 
     if nodelist is None:
-        nodelist = G.nodes()
+        nodelist = list(G)
 
     if not nodelist or len(nodelist) == 0:  # empty nodelist, no drawing
         return None
@@ -494,7 +505,7 @@ def draw_networkx_edges(G, pos,
         ax = plt.gca()
 
     if edgelist is None:
-        edgelist = G.edges()
+        edgelist = list(G.edges())
 
     if not edgelist or len(edgelist) == 0:  # no edges!
         return None
@@ -880,7 +891,7 @@ def draw_circular(G, **kwargs):
     G : graph
        A networkx graph
 
-    **kwargs : optional keywords
+    kwargs : optional keywords
        See networkx.draw_networkx() for a description of optional keywords,
        with the exception of the pos parameter which is not used by this
        function.
@@ -896,7 +907,7 @@ def draw_random(G, **kwargs):
     G : graph
        A networkx graph
 
-    **kwargs : optional keywords
+    kwargs : optional keywords
        See networkx.draw_networkx() for a description of optional keywords,
        with the exception of the pos parameter which is not used by this
        function.
@@ -912,7 +923,7 @@ def draw_spectral(G, **kwargs):
     G : graph
        A networkx graph
 
-    **kwargs : optional keywords
+    kwargs : optional keywords
        See networkx.draw_networkx() for a description of optional keywords,
        with the exception of the pos parameter which is not used by this
        function.
@@ -928,7 +939,7 @@ def draw_spring(G, **kwargs):
     G : graph
        A networkx graph
 
-    **kwargs : optional keywords
+    kwargs : optional keywords
        See networkx.draw_networkx() for a description of optional keywords,
        with the exception of the pos parameter which is not used by this
        function.
@@ -944,7 +955,7 @@ def draw_shell(G, **kwargs):
     G : graph
        A networkx graph
 
-    **kwargs : optional keywords
+    kwargs : optional keywords
        See networkx.draw_networkx() for a description of optional keywords,
        with the exception of the pos parameter which is not used by this
        function.
@@ -966,7 +977,7 @@ def draw_graphviz(G, prog="neato", **kwargs):
     prog : string, optional
       Name of Graphviz layout program
 
-    **kwargs : optional keywords
+    kwargs : optional keywords
        See networkx.draw_networkx() for a description of optional keywords.
     """
     pos = nx.drawing.graphviz_layout(G, prog)

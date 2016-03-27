@@ -2,7 +2,7 @@
 """
 Katz centrality.
 """
-#    Copyright (C) 2004-2015 by
+#    Copyright (C) 2004-2016 by
 #    Aric Hagberg <hagberg@lanl.gov>
 #    Dan Schult <dschult@colgate.edu>
 #    Pieter Swart <swart@lanl.gov>
@@ -280,7 +280,7 @@ def katz_centrality_numpy(G, alpha=0.1, beta=1.0, normalized=True,
     hits
 
     Notes
-    ------
+    -----
     Katz centrality was introduced by [2]_.
 
     This algorithm uses a direct linear solver to solve the above equation.
@@ -316,7 +316,7 @@ def katz_centrality_numpy(G, alpha=0.1, beta=1.0, normalized=True,
                                    'must have a value for every node')
         b = np.array(list(beta.values()), dtype=float)
     except AttributeError:
-        nodelist = G.nodes()
+        nodelist = list(G)
         try:
             b = np.ones((len(nodelist),1))*float(beta)
         except (TypeError,ValueError,AttributeError):
