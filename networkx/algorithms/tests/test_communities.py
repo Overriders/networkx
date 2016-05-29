@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from nose.tools import *
 import networkx as nx
+import math
 
 
 class TestCommunity:
@@ -22,6 +23,17 @@ class TestCommunity:
         assert_equals(tree.neighbors('comm1-2'), ['comm12-1', 'comm13-1'])
         assert_equals(tree.neighbors('comm3-2'), ['comm4-1', 'comm7-1'])
         assert_equals(tree.neighbors('comm1-3'), ['comm3-2', 'comm1-2'])
+
+    def test_louvain_ring_of_cliques(self):
+        num_cliques = 8
+        clique_size = 4
+        G = nx.ring_of_cliques(num_cliques, clique_size)
+        tree = nx.louvain(G)
+        total = 0
+        for i in range(0, int(math.ceil(math.log(num_cliques, 2))) + 1):
+            total += int(num_cliques / math.pow(2, i))
+        assert_equal(len(tree) - clique_size*num_cliques, total)
+        assert_true(tree.is_directed())
 
     @raises(nx.NetworkXError)
     def test_louvain_directed(self):
