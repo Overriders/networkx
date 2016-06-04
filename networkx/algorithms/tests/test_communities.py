@@ -29,10 +29,10 @@ class TestCommunity:
         clique_size = 4
         G = nx.ring_of_cliques(num_cliques, clique_size)
         tree = nx.louvain(G)
-        total = 0
+        total = num_cliques * clique_size
         for i in range(0, int(math.ceil(math.log(num_cliques, 2))) + 1):
-            total += int(num_cliques / math.pow(2, i))
-        assert_equal(len(tree) - clique_size*num_cliques, total)
+            total += int(num_cliques / 2 ** i)
+        assert_equal(len(tree), total)
         assert_true(tree.is_directed())
 
     @raises(nx.NetworkXError)
