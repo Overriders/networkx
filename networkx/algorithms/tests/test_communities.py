@@ -16,13 +16,13 @@ class TestCommunity:
         tree = nx.louvain(G)
         assert_equal(len(tree), 23)
         assert_true(tree.is_directed())
-        assert_equals(tree.neighbors('comm4-1'), [0, 1, 2, 4, 5])
-        assert_equals(tree.neighbors('comm12-1'), [8, 9, 10, 12, 14, 15])
-        assert_equals(tree.neighbors('comm13-1'), [11, 13])
-        assert_equals(tree.neighbors('comm7-1'), [3, 6, 7])
-        assert_equals(tree.neighbors('comm1-2'), ['comm12-1', 'comm13-1'])
-        assert_equals(tree.neighbors('comm3-2'), ['comm4-1', 'comm7-1'])
-        assert_equals(tree.neighbors('comm1-3'), ['comm3-2', 'comm1-2'])
+        assert_equals(list(tree.neighbors('comm4-1')), [0, 1, 2, 4, 5])
+        assert_equals(list(tree.neighbors('comm12-1')), [8, 9, 10, 12, 14, 15])
+        assert_equals(list(tree.neighbors('comm13-1')), [11, 13])
+        assert_equals(list(tree.neighbors('comm7-1')), [3, 6, 7])
+        assert_equals(list(tree.neighbors('comm1-2')), ['comm12-1', 'comm13-1'])
+        assert_equals(list(tree.neighbors('comm3-2')), ['comm4-1', 'comm7-1'])
+        assert_equals(list(tree.neighbors('comm1-3')), ['comm3-2', 'comm1-2'])
 
     def test_louvain_ring_of_cliques(self):
         num_cliques = 8
